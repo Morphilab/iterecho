@@ -49,7 +49,7 @@ Changelog = "https://github.com/Morphilab/iterecho/blob/main/CHANGELOG.md"
 dev = [
     "pytest>=7.0",
     "pytest-cov",
-    "black>=24.10.0,<25.0.0",
+    "black>=22.1.0",
     "isort",
     "ruff",
     "mypy",
