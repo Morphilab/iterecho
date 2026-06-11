@@ -1,0 +1,67 @@
+# ========================================
+# Python - .gitignore (Optimizado 2026)
+# ========================================
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.python-version
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+*.whl
+*.tar.gz
+
+# Testing and coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+.pytest/
+coverage.xml
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and temporary files
+*.log
+*.sqlite3
+*.db
+*.tmp
+*.bak
+
+# Environment variables (uncomment if used)
+#.env
+.env.local
+.env.*.local
+
+# Project specific (add your entries here)
+output/
+temp/
+data/
+notebooks/
+
+# Jupyter
+.ipynb_checkpoints/

@@ -1,0 +1,54 @@
+# See https://pre-commit.com for documentation.
+#
+# Install:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run on demand (CI does this too):
+#   pre-commit run --all-files
+#
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        exclude: ^\.github/workflows/
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: ["--branch=main", "--branch=master"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.4
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        # isort 5.13 keeps the import on one line; isort 8.x would split it.
+        # Pin to 5.13 in both dev deps and pre-commit so they agree.
+        # If upgrading to isort 6+, drop the --line-length here too.
+        args: ["--profile", "black", "--line-length", "100"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        args: ["--line-length", "100"]
+        language_version: python3
+
+  # mypy intentionally omitted from pre-commit: it requires the strict config
+  # from pyproject.toml and is slow. CI runs the full check via the lint job.
+  # To run locally: mypy iterecho/
