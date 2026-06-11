@@ -20,6 +20,7 @@ def test_cli_version_no_subcommand():
     assert result.exit_code == 0
     assert "1.0.0" in result.output
 
+
 def test_cli_version_with_subcommand(tmp_path: Path):
     result = runner.invoke(app, ["--version", "copy"])
     assert result.exit_code == 0

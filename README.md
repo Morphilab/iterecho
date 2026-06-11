@@ -38,10 +38,10 @@ through symlink traversal.
 
 ## ⚠️ AI Disclosure / Divulgación de IA
 
-**English:**  
+**English:**
 This project was developed with assistance from artificial intelligence tools. Given the automated nature of some components, users are advised to review and test the code independently before integrating it into their own systems.
 
-**Español:**  
+**Español:**
 Este proyecto fue desarrollado con asistencia de herramientas de inteligencia artificial. Dada la naturaleza automatizada de algunos componentes, se recomienda que los usuarios revisen y prueben el código independientemente antes de integrarlo en sus propios sistemas.
 
 ## Table of contents
