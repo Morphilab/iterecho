@@ -155,7 +155,8 @@ class FileProcessor:
     def process(self, files: list[FileEntry]) -> None:
         """Process files according to the configured mode."""
         try:
-            # Lock output directory for all modes that write to a specific location
+            # Copy locks only when targeting a shared output directory;
+            # concatenate and chunk always write into one.
             if self.config.mode is Mode.COPY:
                 if self.config.output_dir:
                     self._lock_output_dir(self.config.output_dir)
@@ -266,10 +267,10 @@ class FileProcessor:
 
     def _write_single_file(self, files: list[FileEntry], output_path: Path) -> None:
         """Write a single concatenated output file."""
-        # Handle edge case of empty files list
         if not files:
             logger.info("No files to process")
-            # Still create the output file for consistency with test expectations
+            # Always leave a valid (empty) output file behind so downstream
+            # consumers can rely on the artifact existing.
             output_path.touch(exist_ok=True)
             return
 
@@ -284,10 +285,8 @@ class FileProcessor:
 
     def _write_chunks(self, files: list[FileEntry], output_dir: Path) -> None:
         """Write files split into chunks by size."""
-        # Handle edge case of empty files list
         if not files:
             logger.info("No files to process")
-            # Still create the output directory for consistency
             output_dir.mkdir(parents=True, exist_ok=True)
             return
 

@@ -101,8 +101,8 @@ def main(
 ) -> None:
     """IterEcho - Secure File Processor with copy, concatenate and chunk modes.
 
-    Shared options apply to all subcommands and can be placed before or after
-    the subcommand name.
+    Shared options apply to all subcommands and must be placed before the
+    subcommand name.
     """
     if base_dir is None:
         base_dir = Path.cwd()

@@ -18,13 +18,13 @@ def test_cli_help_succeeds():
 def test_cli_version_no_subcommand():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "1.0.0" in result.output
+    assert "1.0.1" in result.output
 
 
 def test_cli_version_with_subcommand(tmp_path: Path):
     result = runner.invoke(app, ["--version", "copy"])
     assert result.exit_code == 0
-    assert "1.0.0" in result.output
+    assert "1.0.1" in result.output
 
 
 def test_cli_copy_dry_run(tmp_path: Path):
