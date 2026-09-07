@@ -1,6 +1,6 @@
 [project]
 name = "iterecho"
-version = "1.0.0"
+version = "1.0.1"
 description = "Secure file processor with copy, concatenate and chunk modes"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -69,7 +69,6 @@ include = [
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
-    "AGENTS.md",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "SECURITY.md",
