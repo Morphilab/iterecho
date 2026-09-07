@@ -49,6 +49,7 @@ Este proyecto fue desarrollado con asistencia de herramientas de inteligencia ar
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Modes](#modes)
+- [Command-line reference](#command-line-reference)
 - [Security](#security)
 - [Architecture](#architecture)
 - [Development](#development)
@@ -139,8 +140,43 @@ own chunk with a warning.
 
 ```bash
 iterecho --base-dir ./logs --extensions .log chunk --chunk-size 50M
-# -> ./chunk_001.log, ./chunk_002.log, ...
+# -> ./chunk_001.txt, ./chunk_002.txt, ...
 ```
+
+Chunk names follow `{prefix}_{NNN}{extension}` — `chunk_001.txt` by default
+(see `--output-prefix` and `--output-extension` below).
+
+## Command-line reference
+
+Global options apply to all subcommands and go **before** the subcommand:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `--version` | — | Show version and exit |
+| `--extensions` | `.txt` | Comma-separated extensions to include (e.g. `.txt,.log`) |
+| `--base-dir` | current dir | Base directory for the file search |
+| `--output-dir` | `--base-dir` | Output directory |
+| `--output-extension` | `.txt` | Extension for generated output files |
+| `--recursive / --no-recursive` | recursive | Search into subdirectories |
+| `--name-filter` | none | Substring to match in filenames |
+| `--max-file-size` | `100M` | Skip files larger than this (e.g. `100M`, `1G`) |
+| `--unsafe` | off | Allow warning-level extensions (`.py`, `.sh`, …) |
+| `--overwrite` | off | Overwrite existing output files |
+| `--verbose / -v` | off | Enable DEBUG logging |
+| `--quiet / -q` | off | Suppress all output except warnings and errors |
+| `--dry-run` | off | Show what would be processed without writing |
+
+Subcommand-specific options go **after** the subcommand:
+
+| Subcommand | Option | Default | Description |
+| --- | --- | --- | --- |
+| `copy` | `--follow-symlinks` | off | Follow symbolic links |
+| `concatenate` | `--output-file` | none | Output file name (overrides `--output-prefix`) |
+| `concatenate` | `--output-prefix` | `concatenated` | Prefix for the output file name |
+| `chunk` | `--chunk-size` | `50M` | Maximum size per chunk (e.g. `10M`, `1G`) |
+| `chunk` | `--output-prefix` | `chunk` | Prefix for chunk file names |
+| `chunk` | `--follow-symlinks` | off | Follow symbolic links |
+| `interactive` | — | — | TUI mode (ignores shared CLI options) |
 
 ## Security
 
@@ -175,7 +211,7 @@ iterecho/
   security.py           # SecurityEngine — path traversal / symlink validation
   tui.py                # Rich-based interactive mode
   config/               # Configuration package
-    models.py           # SearchConfig, OutputConfig, SecuritySettings + parse_size/fmt_size
+    models.py           # SearchConfig, OutputConfig, SecuritySettings, Mode + parse_size/fmt_size
     sanitize.py         # CRITICAL/WARNING blocklists + sanitize_filename + is_safe_extension
     app.py              # AppConfig (backward-compatible delegation to dataclasses)
   utils/
@@ -193,7 +229,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Optional: pre-commit hooks (run ruff/black/isort on staged files)
+# Optional: pre-commit hooks (ruff, ruff-format, black, isort + hygiene checks)
 pip install pre-commit
 pre-commit install
 ```
@@ -201,7 +237,7 @@ pre-commit install
 Run the quality gate locally:
 
 ```bash
-pre-commit run --all-files          # ruff + black + isort
+pre-commit run --all-files          # ruff, ruff-format, black, isort + hygiene
 ruff check iterecho/ tests/        # or just ruff
 black --check iterecho/ tests/     # or just black
 mypy iterecho/                      # mypy strict

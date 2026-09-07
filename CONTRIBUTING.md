@@ -26,8 +26,9 @@
 
 ```
 iterecho/
-  config/          # Focused modules (models, parse, blocklists, sanitize, app)
+  config/          # Focused modules (models, sanitize, app)
     models.py      # SearchConfig, OutputConfig, SecuritySettings dataclasses
+    sanitize.py    # CRITICAL/WARNING blocklists + sanitize_filename + is_safe_extension
     app.py         # AppConfig wrapper (backward compat with old consumers)
   security.py      # SecurityEngine: is_within_base + validate_file only
   processing.py    # FileProcessor: copy/concat/chunk + concurrency lock
@@ -46,7 +47,8 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Pre-commit hooks (recommended; runs ruff/black/isort on staged files)
+# Pre-commit hooks (recommended; runs ruff, ruff-format, black, isort and
+# hygiene checks on staged files)
 pip install pre-commit
 pre-commit install
 ```
