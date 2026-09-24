@@ -1,6 +1,6 @@
 [project]
 name = "iterecho"
-version = "1.0.1"
+dynamic = ["version"]
 description = "Secure file processor with copy, concatenate and chunk modes"
 readme = "README.md"
 license = { file = "LICENSE" }
