@@ -71,8 +71,10 @@ pytest -k "tui"                     # pattern match
 ## Concurrency lock
 
 The `FileProcessor` acquires an atomic file lock (`.iterecho.lock`) in the
-output directory before writing. If you add new write paths, ensure they
-participate in the lock or opt out explicitly.
+output directory before writing — always in `concatenate` and `chunk` modes,
+and in `copy` mode only when `--output-dir` is set (in-place copies write
+next to the sources without locking). If you add new write paths, ensure
+they participate in the lock or opt out explicitly.
 
 ## Reporting bugs
 

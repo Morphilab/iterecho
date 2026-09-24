@@ -41,7 +41,7 @@ IterEcho is a local CLI tool. The threat model is:
 | Symlink-chain escape | Resolved target re-validated against base; intermediate symlinks unwound |
 | Race conditions across processes | `fcntl.lockf` advisory lock on a 0o600 file (POSIX); O_EXCL + PID liveness (Windows) |
 | Information disclosure via lock file | Lock file created with 0o600 permissions |
-| Filename injection (`/`, `\0`, Windows reserved names) | `sanitize_filename` strips control chars, NULs, BOM, ZWJ; prefixes `-` and Windows reserved names; truncates to 200 chars |
+| Filename injection (`/`, `\0`, Windows reserved names) | `sanitize_filename` strips control chars, NULs, BOM, ZWJ; prefixes `_` to names starting with `-` and to Windows reserved names; truncates to 200 chars |
 | Visual spoofing via Unicode normalization | NFC normalization; zero-width / RTL override characters replaced with `_` |
 | Executable smuggling | `CRITICAL_EXTENSIONS` blocklist (44 entries) — always blocked, even with `--unsafe` |
 | Script file processing | `WARNING_EXTENSIONS` (`.py`, `.sh`, `.js`, etc.) blocked by default; require `--unsafe` opt-in |
@@ -61,4 +61,4 @@ We thank the following reporters (none yet — be the first!).
 
 ---
 
-_Last updated: IterEcho v1.0_
+_Last updated: IterEcho v1.0.1_

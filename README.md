@@ -31,8 +31,10 @@ through symlink traversal.
 - **Streaming.** Files are read in 1 MiB chunks — no full-file memory
   load, no `shutil.copy2` corruption.
 - **Concurrency-safe.** `fcntl.lockf` advisory lock (POSIX) prevents
-  two instances from clobbering the same output directory; the lock
-  is released via `atexit` if the process is killed mid-run.
+  two instances from clobbering the same output directory. The lock is
+  released when processing finishes; an `atexit` hook cleans it up on
+  unexpected interpreter exits, and a stale lock left by a hard kill
+  (`SIGKILL`) is detected and cleared by the next run.
 - **Battle-tested.** 236 tests covering unit, integration, CLI
   (CliRunner), TUI (stdin mocking), and security edge cases.
 
