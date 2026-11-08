@@ -62,4 +62,4 @@ We thank the following reporters (none yet — be the first!).
 
 ---
 
-_Last updated: IterEcho v1.0.1_
+_Last updated: IterEcho v1.0.2_

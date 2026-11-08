@@ -119,7 +119,7 @@ iterecho --overwrite --output-dir ./out chunk --chunk-size 10M
 Copia archivos de `--base-dir` a `--output-dir` (por defecto hace una copia
 saneada en el mismo lugar). El nombre de destino se reconstruye a partir del
 nombre base saneado más `--output-extension` (`.txt` por defecto), así que
-`notes.md` queda como `notes.txt`; en una copia en el mismo lugar, el archivo
+`notes.md` queda como `notes.txt`; en una copia in situ, el archivo
 original permanece y la copia renombrada se crea junto a él. El saneamiento
 sustituye caracteres de control, bytes NUL y caracteres Unicode de suplantación
 por `_`; antepone `_` a los nombres que empiezan por `-` y a los nombres
@@ -227,7 +227,7 @@ El modelo de seguridad de IterEcho está documentado en detalle en
 | Condiciones de carrera entre procesos | Bloqueo advisory `fcntl.lockf` (POSIX) |
 | Inyección en nombres de archivo | `sanitize_filename` elimina caracteres de control, NUL, BOM y ZWJ |
 | Suplantación visual con Unicode | Normalización NFC; caracteres de ancho cero y de dirección RTL sustituidos |
-| Contrabando de ejecutables | Las `CRITICAL_EXTENSIONS` solicitadas (44 entradas) se rechazan; el filtro se aplica a la extensión de la ruta buscada |
+| Introducción de ejecutables | Las `CRITICAL_EXTENSIONS` solicitadas (44 entradas) se rechazan; el filtro se aplica a la extensión de la ruta buscada |
 | Procesamiento de scripts | Las `WARNING_EXTENSIONS` solicitadas se bloquean salvo `--unsafe` |
 | Fugas de descriptores en excepciones | `try/finally` por entrada; los archivos de fragmento se cierran explícitamente |
 | Divulgación de información | Archivo de bloqueo creado con permisos 0o600 |
