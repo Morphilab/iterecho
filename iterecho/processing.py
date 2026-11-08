@@ -19,6 +19,7 @@ logger = get_logger("processing")
 
 _LOCK_MODE = 0o600
 _LOCK_BASENAME = ".iterecho.lock"
+_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 
 
 class FileProcessor:
@@ -37,7 +38,12 @@ class FileProcessor:
         try:
             os.kill(pid, 0)
             return True
-        except (ProcessLookupError, PermissionError, OSError):
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            # EPERM means the process exists but is owned by another user.
+            return True
+        except OSError:
             return False
 
     def _lock_output_dir(self, output_dir: Path) -> None:
@@ -68,8 +74,12 @@ class FileProcessor:
 
         for attempt in range(3):
             if fcntl_available:
-                # Open (creating if absent) and try the advisory lock.
-                fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, mode=_LOCK_MODE)
+                flags = os.O_CREAT | os.O_RDWR | _NOFOLLOW
+                try:
+                    fd = os.open(str(lock_path), flags, mode=_LOCK_MODE)
+                except OSError as e:
+                    logger.error(f"Failed to open lock file {lock_path}: {e}")
+                    raise SystemExit(1) from None
                 try:
                     fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except OSError as e:
@@ -91,7 +101,11 @@ class FileProcessor:
 
             # Fallback path: O_CREAT|O_EXCL with PID liveness.
             try:
-                fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_RDWR, mode=_LOCK_MODE)
+                fd = os.open(
+                    str(lock_path),
+                    os.O_CREAT | os.O_EXCL | os.O_RDWR | _NOFOLLOW,
+                    mode=_LOCK_MODE,
+                )
             except FileExistsError:
                 self._handle_existing_lock(lock_path)
             except OSError as e:
@@ -115,7 +129,12 @@ class FileProcessor:
     def _handle_existing_lock(self, lock_path: Path) -> None:
         """Inspect an existing lock file and decide whether to remove it."""
         try:
-            existing_pid = int(lock_path.read_text().strip())
+            fd = os.open(str(lock_path), os.O_RDONLY | _NOFOLLOW)
+            try:
+                raw = os.read(fd, 64)
+            finally:
+                os.close(fd)
+            existing_pid = int(raw.decode("ascii").strip())
             if self._is_process_alive(existing_pid):
                 logger.error(
                     f"Lock file exists: {lock_path}. "
@@ -134,8 +153,9 @@ class FileProcessor:
     def _release_lock(self) -> None:
         """Release the advisory lock and remove the lock file.
 
-        Safe to call multiple times. Also registered with ``atexit`` so the
-        lock is cleaned up if the process is killed mid-run.
+        Safe to call multiple times. Also registered with ``atexit`` so it
+        runs on a normal interpreter exit; a hard kill (SIGKILL) bypasses
+        ``atexit`` and leaves the lock file for the next run to reclaim.
         """
         if self._lock_fd is not None:
             try:
@@ -213,10 +233,8 @@ class FileProcessor:
                 if not safe_file_copy(
                     entry.abs_path, destination, self.config.follow_symlinks, src_fd=fd
                 ):
-                    # safe_file_copy already logged the cause and cleaned up
-                    # the .tmp file. We raise to bail out of this entry's try
-                    # block; the outer except below logs at error level and
-                    # we move on to the next file.
+                    # safe_file_copy already logged the cause and cleaned up;
+                    # raise so the per-entry handler logs this entry and moves on.
                     raise RuntimeError("Copy failed")
 
                 logger.debug(f"Copied → {destination}")
@@ -230,15 +248,28 @@ class FileProcessor:
                     except OSError:
                         pass
 
+    def _resolve_output_path(self, output_dir: Path, name: str | Path) -> Path:
+        """Resolve an output name and reject paths outside *output_dir*."""
+        base = output_dir.resolve()
+        candidate = (base / name).resolve()
+        try:
+            candidate.relative_to(base)
+        except ValueError:
+            logger.error(f"Output path escapes output directory: {candidate}")
+            raise SystemExit(1) from None
+        return candidate
+
     def _concatenate_mode(self, files: list[FileEntry]) -> None:
         """Concatenate all files into a single output file."""
         logger.info("CONCATENATE mode started")
         output_dir = self.config.output_dir or self.config.base_dir
         output_dir.mkdir(parents=True, exist_ok=True)
         if self.config.output_file:
-            output_path = output_dir / self.config.output_file
+            output_path = self._resolve_output_path(output_dir, self.config.output_file)
         else:
-            output_path = output_dir / f"{self.config.output_prefix}{self.config.output_extension}"
+            output_path = self._resolve_output_path(
+                output_dir, f"{self.config.output_prefix}{self.config.output_extension}"
+            )
         if output_path.exists() and not self.config.overwrite:
             logger.error(f"Output file exists and --overwrite not set: {output_path}")
             raise SystemExit(1)
@@ -300,44 +331,43 @@ class FileProcessor:
         if chunk_size is None:
             raise RuntimeError("chunk_size is required for chunk mode")
         try:
-            for entry in files:
-                header_bytes = self._get_file_header(entry).encode("utf-8")
-                header_size = len(header_bytes)  # Header size without trailing newline
-                if entry.size > chunk_size:
-                    logger.warning(
-                        f"File '{entry.relative_path}' ({entry.size:,} bytes) "
-                        f"exceeds chunk_size ({chunk_size:,} bytes). "
-                        "Placing it entirely in the current chunk (may exceed the limit)."
-                    )
-                # Account for header, file content, and the trailing newline
-                needed_size = entry.size + header_size + 1
-                if current_size == 0 or (
-                    current_size + needed_size > chunk_size and current_size > 0
-                ):
-                    chunk_path = output_dir / f"{prefix}_{chunk_number:03d}{extension}"
-                    chunk_number += 1
-                    current_size = 0
-                    with open(chunk_path, "wb") as out:
-                        try:
-                            written = self._write_file_entry(
-                                entry, out, pbar, pre_encoded_header=header_bytes
-                            )
-                            current_size += written
-                        except (OSError, RuntimeError) as e:
-                            logger.error(f"Failed to process {entry.relative_path}: {e}")
-                else:
-                    # Reuse the current chunk — but we have no long-lived file
-                    # handle because we scope it per chunk. Re-open the previous
-                    # chunk in append mode.
-                    previous_path = output_dir / f"{prefix}_{chunk_number - 1:03d}{extension}"
-                    with open(previous_path, "ab") as out:
-                        try:
-                            written = self._write_file_entry(
-                                entry, out, pbar, pre_encoded_header=header_bytes
-                            )
-                            current_size += written
-                        except (OSError, RuntimeError) as e:
-                            logger.error(f"Failed to process {entry.relative_path}: {e}")
+            chunk_path = self._resolve_output_path(
+                output_dir, f"{prefix}_{chunk_number:03d}{extension}"
+            )
+            current_size = 0
+            out: BinaryIO = open(chunk_path, "wb")
+            try:
+                for entry in files:
+                    header_bytes = self._get_file_header(entry).encode("utf-8")
+                    header_size = len(header_bytes)
+                    if entry.size > chunk_size:
+                        logger.warning(
+                            f"File '{entry.relative_path}' ({entry.size:,} bytes) "
+                            f"exceeds chunk_size ({chunk_size:,} bytes). "
+                            "Placing it entirely in the current chunk (may exceed the limit)."
+                        )
+                    # Account for header, file content, and the trailing newline
+                    needed_size = entry.size + header_size + 1
+                    if current_size + needed_size > chunk_size and current_size > 0:
+                        # The current chunk is full: rotate it and keep going with
+                        # a fresh descriptor instead of re-opening the old one.
+                        out.close()
+                        chunk_number += 1
+                        chunk_path = self._resolve_output_path(
+                            output_dir, f"{prefix}_{chunk_number:03d}{extension}"
+                        )
+                        out = open(chunk_path, "wb")
+                        current_size = 0
+                    try:
+                        written = self._write_file_entry(
+                            entry, out, pbar, pre_encoded_header=header_bytes
+                        )
+                        current_size += written
+                    except (OSError, RuntimeError) as e:
+                        logger.error(f"Failed to process {entry.relative_path}: {e}")
+            finally:
+                if not out.closed:
+                    out.close()
         finally:
             pbar.close()
 

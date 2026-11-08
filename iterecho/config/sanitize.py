@@ -110,24 +110,20 @@ _UNSAFE_UNICODE = (
 
 
 def sanitize_filename(name: str) -> str:
-    # 1. Strip ASCII and Unicode control characters
     safe = re.sub(r'[<>:"/\\|?*\x00-\x1f' + _UNSAFE_UNICODE + r"]", "_", name)
 
-    # 2. Normalise to NFC (prevents visual spoofing via decomposed forms)
+    # NFC prevents visual spoofing via decomposed forms.
     safe = unicodedata.normalize("NFC", safe)
 
-    # 3. Collapse whitespace runs
     safe = re.sub(r"\s+", "_", safe)
 
-    # 3b. Prefix with underscore if name starts with '-' (shell safety)
+    # A leading dash would be parsed as a CLI flag by many tools.
     if safe.startswith("-"):
         safe = "_" + safe
 
-    # 4. Check for Windows reserved names (CON, NUL, etc.)
-    # We check the stem (filename without extension) because Windows reserves names
-    # regardless of extension (e.g., CON.txt is still problematic)
-    # For hidden files like .NUL.txt, we need to check the stem without the leading dot
-    stem_for_check = Path(safe).stem.upper()  # Get stem and uppercase for comparison
+    # Windows reserves these stems regardless of extension (CON.txt is still a problem).
+    # Hidden names like .NUL.txt need the same check after dropping the leading dot.
+    stem_for_check = Path(safe).stem.upper()
     # Remove any leading dots from the stem for reserved name checking
     stem_for_reserved_check = stem_for_check.lstrip(".")
     if stem_for_reserved_check in RESERVED_WINDOWS:
@@ -137,26 +133,25 @@ def sanitize_filename(name: str) -> str:
         else:
             safe = "_" + safe
 
-    # 5. Strip trailing dots (Windows/macOS special meaning)
+    # Windows and macOS give trailing dots special meaning.
     safe = safe.rstrip(".")
 
-    # 6. Truncate to 200 characters, preserving extension
+    # Keep names within a filesystem-friendly limit, preserving the extension.
     max_len = 200
     if len(safe) > max_len:
         stem_part, dot, ext_part = safe.rpartition(".")
-        if ext_part:  # Has extension
-            # Reserve space for dot and extension
+        if ext_part:
             max_stem_len = max_len - len(dot) - len(ext_part)
             if max_stem_len > 0:
                 stem_part = stem_part[:max_stem_len]
                 safe = f"{stem_part}{dot}{ext_part}"
             else:
-                # Extension too long, truncate to max_len anyway
+                # A pathological extension must not defeat the length cap.
                 safe = safe[:max_len]
-        else:  # No extension
+        else:
             safe = safe[:max_len]
 
-    # 7. Fallback for empty result
+    # Never return an empty name.
     if not safe:
         safe = "unnamed_file"
 

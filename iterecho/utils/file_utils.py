@@ -13,9 +13,10 @@ logger = get_logger("file_utils")
 def _open_secure(path: Path, follow_symlinks: bool = False) -> int:
     """Open a regular file securely, returning a file descriptor.
 
-    Uses O_NOFOLLOW to prevent symlink race attacks unless follow_symlinks is True,
-    in which case the symlink is resolved first and then opened without O_NOFOLLOW.
-    Raises RuntimeError if the path is not a regular file.
+    When *follow_symlinks* is True the link target is resolved first; the
+    resolved path is then opened with O_NOFOLLOW, so a symlink swapped in
+    after resolution is still rejected. Raises RuntimeError if the opened
+    path is not a regular file.
     """
     if follow_symlinks:
         resolved = path.resolve(strict=False)
@@ -70,7 +71,7 @@ def safe_file_copy(
     """Copy a file safely using an atomic temporary file with TOCTOU protection.
 
     If *src_fd* is provided it is used directly, bypassing *src*
-    and *follow_symlinks*.  The fd is closed when the copy completes.
+    and *follow_symlinks*; the caller retains ownership and must close it.
     """
     tmp = None
     try:
@@ -80,7 +81,7 @@ def safe_file_copy(
 
         dst.parent.mkdir(parents=True, exist_ok=True)
 
-        # Determine if we should close the fd after use
+        # A caller-supplied descriptor stays open so the caller can reuse it.
         should_close_fd = src_fd is None
         fd = src_fd if src_fd is not None else _open_secure(src, follow_symlinks)
         try:

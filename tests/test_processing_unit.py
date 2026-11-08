@@ -103,6 +103,43 @@ class TestFileProcessor:
         dest = tmp_path / "file.txt"
         assert dest.exists()
 
+    def test_chunk_rejects_output_prefix_outside_output_dir(self, tmp_path: Path):
+        config = AppConfig()
+        config.base_dir = tmp_path
+        config.output_dir = tmp_path / "out"
+        config.mode = "chunk"
+        config.extensions = [".txt"]
+        config.chunk_size = 1024
+        config.output_prefix = "../escape"
+        config.overwrite = True
+
+        entries = [make_file_entry(tmp_path, "a.txt", "hello")]
+        processor = FileProcessor(config)
+
+        with pytest.raises(SystemExit) as excinfo:
+            processor.process(entries)
+
+        assert excinfo.value.code == 1
+        assert not (tmp_path / "escape_001.txt").exists()
+
+    def test_concat_rejects_output_file_outside_output_dir(self, tmp_path: Path):
+        config = AppConfig()
+        config.base_dir = tmp_path
+        config.output_dir = tmp_path / "out"
+        config.mode = "concatenate"
+        config.extensions = [".txt"]
+        config.output_file = tmp_path / "escaped.txt"
+        config.overwrite = True
+
+        entries = [make_file_entry(tmp_path, "a.txt", "hello")]
+        processor = FileProcessor(config)
+
+        with pytest.raises(SystemExit) as excinfo:
+            processor.process(entries)
+
+        assert excinfo.value.code == 1
+        assert not (tmp_path / "escaped.txt").exists()
+
     def test_concat_output_file_custom(self, tmp_path: Path):
         config = AppConfig()
         config.base_dir = tmp_path
