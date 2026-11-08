@@ -1,13 +1,17 @@
+# PUBLIC ignore rules — this file is committed and shared with every clone.
+# It may only contain artifact/secret *patterns* that reveal nothing about the
+# repository (caches, build output, local environments, env-var files).
+# Internal project paths belong in .git/info/exclude, which is never pushed.
+
 # ========================================
 # Python
 # ========================================
 
-# Virtual Environments
-.venv/
+# Virtual Environments (.venv, .venv314, ...)
+.venv*/
 venv/
 ENV/
 env/
-.python-version
 
 # Python cache and bytecode
 __pycache__/
@@ -52,16 +56,28 @@ coverage.xml
 *.tmp
 *.bak
 
-# Environment variables (uncomment if used)
-#.env
-.env.local
-.env.*.local
+# Environment / secrets files (pattern-only rules; safe to publish).
+# .env holds credentials in most projects, so it must never be committable.
+.env
+.env.*
+!.env.example
 
-# Project specific (add your entries here)
+# Project specific — convenience patterns for local runs of the tool
+# (README examples write to ./output, ./logs, ./out, ./dst and ./my-files).
+# They are harmless to publish and belong here rather than in the private
+# exclude file.
 output/
+logs/
+out/
+dst/
+my-files/
 temp/
 data/
 notebooks/
+
+# Runtime artifacts of the tool itself
+# (left behind if the process is hard-killed while holding the output lock)
+.iterecho.lock
 
 # Jupyter
 .ipynb_checkpoints/

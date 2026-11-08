@@ -22,9 +22,8 @@
 - [ ] Format passes: `black --check --line-length 100 iterecho/ tests/`
 - [ ] Imports pass: `isort --check --profile black iterecho/ tests/`
 - [ ] Types pass: `mypy iterecho/`
-- [ ] Security audit clean: `bandit -r iterecho/ -q -ll` and `pip-audit`
-- [ ] Build succeeds: `python -m build`
-- [ ] `CHANGELOG.md` updated (Added / Changed / Fixed / Security)
+- [ ] Security audit clean: `bandit -r iterecho/ -q -ll` and `pip-audit --skip-editable`
+- [ ] Build succeeds: `uv build`
 - [ ] Public API change? — `__init__.py` exports updated and documented
 - [ ] CLI change? — help text updated and a new test added in
       `tests/test_cli.py`
@@ -37,7 +36,7 @@ If this PR touches the security boundary (`security.py`,
 
 - [ ] New tests cover the new behavior (regression-safe)
 - [ ] No reduction in default protection
-- [ ] Documented the impact in `CHANGELOG.md` under `### Security`
+- [ ] Documented the security impact in the PR description
 
 ## Notes for reviewer
 
