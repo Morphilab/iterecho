@@ -27,23 +27,26 @@ repos:
         args: ["--branch=main", "--branch=master"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.4
+    rev: v0.16.10
     hooks:
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
       - id: ruff-format
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 9.0.2
     hooks:
       - id: isort
-        # isort 5.13 keeps the import on one line; isort 8.x would split it.
-        # Pin to 5.13 in both dev deps and pre-commit so they agree.
-        # If upgrading to isort 6+, drop the --line-length here too.
+        # These revs must match what uv resolves for the lint job: the dev
+        # extra is unpinned on purpose (3.8..3.14 each get their own version,
+        # frozen in uv.lock) and CI runs the linters on Python 3.12, whose
+        # resolution is the one mirrored here. `.pre-commit-config.yaml` is
+        # checked against the installed versions by
+        # .github/scripts/check_tool_pins.py in the lint job.
         args: ["--profile", "black", "--line-length", "100"]
 
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.10.0
     hooks:
       - id: black
         args: ["--line-length", "100"]

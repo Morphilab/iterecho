@@ -27,13 +27,17 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Utilities",
     "Topic :: System :: Filesystems",
     "Topic :: Security",
 ]
 dependencies = [
     "tqdm>=4.66",
-    "typer[all]>=0.12",
+    "typer>=0.12",
+    "rich>=13.0",
+    "shellingham>=1.5",
 ]
 
 [project.scripts]
@@ -43,7 +47,6 @@ iterecho = "iterecho.cli:app"
 Homepage = "https://github.com/Morphilab/iterecho"
 Repository = "https://github.com/Morphilab/iterecho.git"
 "Bug Tracker" = "https://github.com/Morphilab/iterecho/issues"
-Changelog = "https://github.com/Morphilab/iterecho/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -53,6 +56,13 @@ dev = [
     "isort",
     "ruff",
     "mypy",
+    # Everything the PR checklist and the local quality gate ask for, so
+    # `uv sync --extra dev` is enough. Versions are pinned per Python in
+    # uv.lock (3.8..3.14 each resolve their own).
+    "bandit",
+    "pip-audit",
+    "pre-commit",
+    "build",
 ]
 
 [build-system]
@@ -67,10 +77,8 @@ include = [
     "iterecho",
     "tests",
     "README.md",
-    "CHANGELOG.md",
+    "README.es.md",
     "LICENSE",
-    "CONTRIBUTING.md",
-    "CODE_OF_CONDUCT.md",
     "SECURITY.md",
     "pyproject.toml",
 ]
@@ -80,7 +88,7 @@ path = "iterecho/__init__.py"
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py38", "py39", "py310", "py311", "py312", "py313", "py314"]
 
 [tool.isort]
 profile = "black"
@@ -94,7 +102,7 @@ select = ["E", "W", "F", "I", "B", "C4", "UP"]
 ignore = ["E501", "B008"]   # B008 is normal for Typer defaults
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 strict = true
 ignore_missing_imports = true
 
