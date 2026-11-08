@@ -160,6 +160,8 @@ jobs:
         with:
           version: "0.12.24"
           python-version: ${{ matrix.python-version }}
+          enable-cache: false
+          cache-python: false
 
       - name: Cache pre-commit environments
         uses: actions/cache@v4
