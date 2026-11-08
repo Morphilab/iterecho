@@ -5,7 +5,7 @@ from .search import FileSearcher
 from .security import SecurityEngine
 from .tui import run_tui
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __author__ = "morphilab"
 __description__ = "IterEcho - Secure File Processor"
 
